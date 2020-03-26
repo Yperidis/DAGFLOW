@@ -15,7 +15,7 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, dk = 2):
     
     levs: Optional int>0. Default=12. Height of the tree counting from 0.
     
-    ell: Optional int>0. Default=0. Ancestor-descendant relation (0 is simple parent-child). Integer>=0.
+    ell: Optional int>0. Default=1. Ancestor-descendant relation (1 is simple parent-child). Integer>=1.
     
     dk: Optional int>0. Default=2. The level upwards which a given node can substitute. Integer>0.
     '''
