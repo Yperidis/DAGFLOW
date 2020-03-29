@@ -7,3 +7,4 @@ There are a few dependencies of the pure code. For visualizations consider using
 * random
 * scipy (checked with 1.4.1)
 * numpy (checked with 1.18.1)
+* networkx (checked with 2.4)
