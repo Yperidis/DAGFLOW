@@ -56,7 +56,7 @@ class Node:
         This function gathers all the ancestors of the node in question in a list, including the node. The list
         is returned.
         '''
-        self.cmndlineup = [self, self.parent]  # minimal upstream communication
+#         self.cmndlineup = [self.parent]  # minimal upstream hierarchy
         temp = self.parent
         
 #         finished = False

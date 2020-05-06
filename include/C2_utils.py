@@ -53,8 +53,14 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, dk = 2):
             next_nodes = []
             for previous_node in previous_nodes0:  # generation of descendants and connections up and downstream in level
                 for j in range(nchildren):
+                    if l > 1 and previous_node.levcur > 1:  # in case of ell>1...
+                        temp = []
+                        for ComUp in previous_node.cmndlineup[:l]:
+                            temp.append(ComUp.message)
+                        mes = np.mean(temp)  # ... the message shall be the mean of its upper line of command up to ell
+                    else:  # reconsider if the ell is not universal
+                        mes = previous_node.message+np.random.choice(movesp)  # the new message (rnd walk)                    
     #                 mes = previous_node.message+np.random.choice(movesp, p=[0.9, 0.09, 0.01])  # the new message (rnd walk) as broken telephone, i.e. biased, rarely remaining intact and only as a rare event being rectified
-                    mes = previous_node.message+np.random.choice(movesp)  # the new message (rnd walk)
                     child_node = Node.Node(nb_nodes, mes)  # generation of child node
                     child_node.levin = i  # set the intial level of the child node
                     child_node.levcur = i  # set the current level of the child node
