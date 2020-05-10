@@ -25,7 +25,7 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, dk = 2):
     n=levs  # height of the tree (index starts at 0). More than 28 would probably not be of much practical application
          # (see Chinese civil service) https://en.wikipedia.org/wiki/Civil_Service_of_the_People%27s_Republic_of_China
          # for a binary tree
-    l = ell  # high command take over (whole subtrees connected when l-1). CHANGE FOR DIFFERENT SIMULATIONS
+    # ell high command take over (whole subtrees connected when l-1). CHANGE FOR DIFFERENT SIMULATIONS
     # also models the interlayer communication conflict from parent-child relation (0) to full ancestry (n-2). Each node is going to have depmes+2 for its std
     dk = dk  # depth of knowledge  CHANGE FOR DIFFERENT SIMULATIONS
     movesp = [-1, 1]  # the basis for the message distortion (random walk)
@@ -41,7 +41,7 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, dk = 2):
         node.levcur = 0
         node.depknow = dk
         node.q = 1.
-        node.highercmnd = l
+        node.highercmnd = ell
         node.survprob = 1
         next_nodes = [node]  # initialize the descendant tree
         nb_nodes = 1  # increment for the node ID allocation
@@ -53,9 +53,9 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, dk = 2):
             next_nodes = []
             for previous_node in previous_nodes0:  # generation of descendants and connections up and downstream in level
                 for j in range(nchildren):
-                    if l > 1 and previous_node.levcur > 1:  # in case of ell>1...
+                    if ell > 1 and previous_node.levcur > 1:  # in case of ell>1 for a path length from the root >1...
                         temp = []
-                        for ComUp in previous_node.cmndlineup[:l]:
+                        for ComUp in previous_node.cmndlineup[:ell]:
                             temp.append(ComUp.message)
                         mes = np.mean(temp)  # ... the message shall be the mean of its upper line of command up to ell
                     else:  # reconsider if the ell is not universal
@@ -67,7 +67,7 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, dk = 2):
                     child_node.depknow = dk
                     child_node.parent = previous_node  # connection of generated to parent node
     #                 if i <= n-2:
-                    child_node.highercmnd = l  #  assign a high command take over for all the meaningfully commanding nodes
+                    child_node.highercmnd = ell  #  assign a high command take over for all the meaningfully commanding nodes
                     if child_node.highercmnd > 1:
                         child_node.survprob = scp.special.binom(n,i)*( (n-child_node.highercmnd)/n )**i \
                         *( child_node.highercmnd/n )**(n-i)   # probability of survival (binomial prob. mass function, p=n-ell)
@@ -75,7 +75,7 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, dk = 2):
                         child_node.survprob = 1
                     Node.Node.Efficiency(child_node, child_node.levin, child_node.levcur)  # the efficiency of the node at its position
                     previous_node.MakeChildren(child_node)  # connection of parent to generated node
-                    Node.Node.CommandLineUp(child_node, l)  # store the upstream line of nodes for each node for the desired depth
+                    Node.Node.CommandLineUp(child_node, ell)  # store the upstream line of nodes for each node for the desired depth
                     nb_nodes += 1  # next unique ID
     #                 mes += np.random.uniform()  # distortion that does not oscillate around the refrence point
     #                 mes += np.random.choice(movesp)  # uniformly pick one of the predefined choices for the distortion
