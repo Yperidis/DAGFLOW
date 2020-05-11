@@ -4,7 +4,7 @@ import numpy as np
 import Node
 
 #### Function for generating a command binary tree with random walk messaging
-def CommandGeneration(It = 100, levs = 12, ell = 1, dk = 2):
+def CommandGeneration(It = 100, levs = 12, ell = 1):
     '''
     Returns an ensemble of binary trees in the form of a list of lists.
     Each sublist contains all the nodes of a given tree structure. 
@@ -15,9 +15,7 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, dk = 2):
     
     levs: Optional int>0. Default=12. Height of the tree counting from 0.
     
-    ell: Optional int>0. Default=1. Ancestor-descendant relation (1 is simple parent-child). Integer>=1.
-    
-    dk: Optional int>0. Default=2. The level upwards which a given node can substitute. Integer>0.
+    ell: Optional int>0. Default=1. Ancestor-descendant relation (1 is simple parent-child). Represents knowledge. Integer>=1.
     '''
 
     ran = range(It)  # iterations for generating different seeds
@@ -39,7 +37,6 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, dk = 2):
         node = Node.Node(0,mes)  # ID arbitrarily set to 0 for the root
         node.levin = 0
         node.levcur = 0
-        node.depknow = dk
         node.q = 1.
         node.highercmnd = ell
         node.survprob = 1
@@ -53,18 +50,17 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, dk = 2):
             next_nodes = []
             for previous_node in previous_nodes0:  # generation of descendants and connections up and downstream in level
                 for j in range(nchildren):
-                    if ell > 1 and previous_node.levcur > 1:  # in case of ell>1 for a path length from the root >1...
-                        temp = []
-                        for ComUp in previous_node.cmndlineup[:ell]:
-                            temp.append(ComUp.message)
-                        mes = np.mean(temp)  # ... the message shall be the mean of its upper line of command up to ell
-                    else:  # reconsider if the ell is not universal
-                        mes = previous_node.message+np.random.choice(movesp)  # the new message (rnd walk)                    
-    #                 mes = previous_node.message+np.random.choice(movesp, p=[0.9, 0.09, 0.01])  # the new message (rnd walk) as broken telephone, i.e. biased, rarely remaining intact and only as a rare event being rectified
+#                     if ell > 1 and previous_node.levcur > 1:  # in case of ell>1 for a path length from the root >1...
+#                         temp = []
+#                         for ComUp in previous_node.cmndlineup[:ell]:
+#                             temp.append(ComUp.message)
+#                         mes = np.mean(temp)  # ... the message shall be the mean of its upper line of command up to ell
+#                     else:  # reconsider if the ell is not universal
+#                         mes = previous_node.message+np.random.choice(movesp)  # the new message (rnd walk with memory)
+                    mes = previous_node.message+np.random.choice(movesp)  # the new message (rnd walk with memory)
                     child_node = Node.Node(nb_nodes, mes)  # generation of child node
                     child_node.levin = i  # set the intial level of the child node
                     child_node.levcur = i  # set the current level of the child node
-                    child_node.depknow = dk
                     child_node.parent = previous_node  # connection of generated to parent node
     #                 if i <= n-2:
                     child_node.highercmnd = ell  #  assign a high command take over for all the meaningfully commanding nodes
@@ -77,15 +73,8 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, dk = 2):
                     previous_node.MakeChildren(child_node)  # connection of parent to generated node
                     Node.Node.CommandLineUp(child_node, ell)  # store the upstream line of nodes for each node for the desired depth
                     nb_nodes += 1  # next unique ID
-    #                 mes += np.random.uniform()  # distortion that does not oscillate around the refrence point
-    #                 mes += np.random.choice(movesp)  # uniformly pick one of the predefined choices for the distortion
                     next_nodes += [child_node]  # the children which are to become parents in the next round
                     all_nodes += [child_node]
-
-#             if i <= 2:  # customizing to the desired branching.
-#                 nchildren = 5
-#             else:
-#                 nchildren = 10            
 
         all_nodes_set.append(all_nodes)    
     
@@ -135,4 +124,18 @@ def IncreaseSubTreeConnectivity(struct, ell=2):
                     buf.append(child)
             j += 1
             temp = buf  # prepare the children of the next level for iteration
-#     return struct
+
+def NodesStd(NodeSet):  #### for list version: def NodesStd(NodeSet, N):
+    '''
+    Returns a dictionary of standard deviation based on current and ancestral values for every node, given
+    one structure with assigned messages (signals). For the root (not caluclated) zero is assigned by default.
+    '''
+    sigma = {NodeSet[0] : 0}  # Initialize the root with a null std
+    k = 0
+
+    for i in NodeSet[1:]:
+        sigmabuf = []
+        for j in i.cmndlineup:  # the ancestry of node i
+            sigmabuf.append(j.message)
+        sigma[i] = np.std(sigmabuf)  # the std of the messages of the ancestry of node i
+    return sigma

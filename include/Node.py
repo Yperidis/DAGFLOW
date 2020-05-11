@@ -2,14 +2,11 @@ import random
 
 class Node:
     def __init__(self, ID, message, 
-                 parent=None, childNo=None, children_list=None, depknow=None, levin=None, levcur=None, 
+                 parent=None, childNo=None, children_list=None, levin=None, levcur=None, 
                 cmndlineup=None, cmndnodes=None, q=None, highercmnd=None, survprob=None, ancestor_list=None,
                 descendant_list=None):
         self.ID = ID  # an integer ascending from 0 to the number of the nodes minus 1)
         self.message = message  # some integer number representing an initial message
-
-        self.depknow = depknow  # an integer ascending from 0 indicating how many levels up a node can replace
-                            # cannot be greater than the number of levels
         self.levin = levin  # an integer between 0 and the height of the hierarchy before an iteration
         self.levcur = levcur  # as levin but for the update after the iteration
         self.parent = parent  # an integer if applicable (non applicable to the root node)
@@ -50,26 +47,17 @@ class Node:
     def parent(self):
         return self.parent
     
-# This function gathers all the ancestors of the node in question in a list, including the node.
     def CommandLineUp(self, l):  # n is assumed to be a gloabal variable and equal to the height of the tree
         '''
-        This function gathers all the ancestors of the node in question in a list, including the node. The list
+        This function gathers all the ancestors of the node in question in a list up to l (min(l)=1). The list
         is returned.
         '''
-#         self.cmndlineup = [self.parent]  # minimal upstream hierarchy
         temp = self.parent
-        
-#         finished = False
-#         while finished is False:  # ATTENTION! CHANGE TO A FOR LOOP IF THE GRAPH IS NOT A TREE ANYMORE
-#             if temp.parent is not None:
-#                 temp = temp.parent
-#                 self.cmndlineup.append(temp)
-#             else:
-#                 finished = True
+
         for i in range(l):  # depth of message: for l=0 leaf sees only parent. For l=n-1 leaf sees all ancestors
-            if temp.parent is not None:
-                temp = temp.parent
+            if temp is not None:
                 self.cmndlineup.append(temp)
+                temp = temp.parent
             else:
                 break  # reached the root
         return self.cmndlineup  # the final ancestry of the node (or its upstream communication)
