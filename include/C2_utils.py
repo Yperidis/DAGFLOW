@@ -16,6 +16,7 @@ def CommandGeneration(It = 100, levs = 12, ell = 1):
     levs: Optional int>0. Default=12. Height of the tree counting from 0.
     
     ell: Optional int>0. Default=1. Ancestor-descendant relation (1 is simple parent-child). Represents knowledge. Integer>=1.
+         For ell-1 there are short-circuits between the roots, the leaves and all nodes in between. 
     '''
 
     ran = range(It)  # iterations for generating different seeds
@@ -25,7 +26,6 @@ def CommandGeneration(It = 100, levs = 12, ell = 1):
          # for a binary tree
     # ell high command take over (whole subtrees connected when l-1). CHANGE FOR DIFFERENT SIMULATIONS
     # also models the interlayer communication conflict from parent-child relation (0) to full ancestry (n-2). Each node is going to have depmes+2 for its std
-    dk = dk  # depth of knowledge  CHANGE FOR DIFFERENT SIMULATIONS
     movesp = [-1, 1]  # the basis for the message distortion (random walk)
 
 #    np.random.seed(3)
@@ -125,17 +125,14 @@ def IncreaseSubTreeConnectivity(struct, ell=2):
             j += 1
             temp = buf  # prepare the children of the next level for iteration
 
-def NodesStd(NodeSet):  #### for list version: def NodesStd(NodeSet, N):
-    '''
-    Returns a dictionary of standard deviation based on current and ancestral values for every node, given
-    one structure with assigned messages (signals). For the root (not caluclated) zero is assigned by default.
-    '''
-    sigma = {NodeSet[0] : 0}  # Initialize the root with a null std
+def NodesOutF(NodeSet):
+
+    outf = {NodeSet[0] : 0}  # Initialize the root with a null std
     k = 0
 
     for i in NodeSet[1:]:
-        sigmabuf = []
-        for j in i.cmndlineup:  # the ancestry of node i
-            sigmabuf.append(j.message)
-        sigma[i] = np.std(sigmabuf)  # the std of the messages of the ancestry of node i
-    return sigma
+        outfbuf = []
+        for j in i.cmndlineup:  
+            outfbuf.append(j.message) # the ancestry of node i, gathered for processing
+        outf[i] = np.std(outfmabuf)  # the std of the messages of the ancestry of node i (CUSTOMIZE)
+    return outf
