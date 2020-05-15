@@ -1,7 +1,8 @@
 import random
+import networkx as nx
 
 class Node:
-    def __init__(self, ID, message, 
+    def __init__(self, ID=None, message=None, 
                  parent=None, childNo=None, children_list=None, levin=None, levcur=None, 
                 cmndlineup=None, cmndnodes=None, q=None, highercmnd=None, survprob=None, ancestor_list=None,
                 descendant_list=None):
@@ -47,16 +48,16 @@ class Node:
     def parent(self):
         return self.parent
     
-    def CommandLineUp(self, l):  # n is assumed to be a gloabal variable and equal to the height of the tree
+    def CommandLineUp(self, l):
         '''
-        This function gathers all the ancestors of the node in question in a list up to l (min(l)=1). The list
-        is returned.
+        This function gathers all the ancestors of the node in question in a list up to l (min(l)=1), including
+        the node in question. The list is returned.
         '''
-        temp = self.parent
+        temp = self
 
         for i in range(l):  # depth of message: for l=0 leaf sees only parent. For l=n-1 leaf sees all ancestors
             if temp is not None:
-                self.cmndlineup.append(temp)
+                self.cmndlineup.append(temp.ID)
                 temp = temp.parent
             else:
                 break  # reached the root
