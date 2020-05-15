@@ -2,7 +2,7 @@ import random
 import networkx as nx
 
 class Node:
-    def __init__(self, ID=None, message=None, highercmnd=None,
+    def __init__(self, ID=None, message=None, highercmnd=None, lev=None,
                  parent=None, childNo=None, children_list=None,
                 cmndlineup=None, cmndnodes=None, ancestor_list=None,
                 descendant_list=None):
@@ -11,6 +11,7 @@ class Node:
         self.parent = parent  # an integer if applicable (non applicable to the root node)
         self.highercmnd = highercmnd  # an integer ascending from 1 to the height minus 1 indicating the value of knowing 
         # what superiours know
+        self.lev = lev  # reflects the depth in a tree structure
         self.children_list = []
         self.cmndlineup = []  # initialization for the full line of command including the node in question
         self.cmndnodes = []

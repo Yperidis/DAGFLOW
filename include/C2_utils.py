@@ -27,9 +27,11 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, branchf = 2):
         G=nx.Graph()
         mes = 0  # the offset (original message). The ansatz is that it should be correlated with system parameters.
         node = Node.Node(0,mes)  # ID arbitrarily set to 0 for the root
+        node.highercmnd = ell
+        node.lev = 0
         next_nodes = [node]  # initialize the descendant tree
         nb_nodes = 1  # increment for the node ID allocation
-        G.add_node(node.ID, Pknow=1/2**mes, ID=node.ID)
+        G.add_node(node.ID, Pknow=1/2**((node.highercmnd-1)*np.abs(mes)), ID=node.ID, lev=0)
         # all_nodes = [node]  # initializer for the tree structure
         movesp = [-1, 1]  # the basis for the message distortion (random walk)
 
@@ -42,10 +44,12 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, branchf = 2):
                     child_node = Node.Node(nb_nodes, mes)  # generation of child node
                     child_node.parent = previous_node  # connection of generated to parent node
                     child_node.highercmnd = ell  # assigning different spans of knowledge to different nodes
+                    child_node.lev = i
                     Node.Node.CommandLineUp(child_node, ell)  # node and predecessors up to ell
                     nb_nodes += 1  # next unique ID
                     next_nodes += [child_node]  # the children which are to become parents in the next round
-                    G.add_node(child_node.ID, Pknow=1/2**((child_node.highercmnd-1)*np.abs(mes)), ID=child_node.ID)
+                    G.add_node(child_node.ID, Pknow=1/2**((child_node.highercmnd-1)*np.abs(mes)), ID=child_node.ID,
+                              lev=child_node.lev)
                     G.add_edge(previous_node.ID, child_node.ID)
                     for j in child_node.cmndlineup:  # adding the short-circuits
                         G.add_edge(j, child_node.ID)
