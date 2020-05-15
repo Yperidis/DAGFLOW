@@ -2,22 +2,18 @@ import random
 import networkx as nx
 
 class Node:
-    def __init__(self, ID=None, message=None, 
-                 parent=None, childNo=None, children_list=None, levin=None, levcur=None, 
-                cmndlineup=None, cmndnodes=None, q=None, highercmnd=None, survprob=None, ancestor_list=None,
+    def __init__(self, ID=None, message=None, highercmnd=None,
+                 parent=None, childNo=None, children_list=None,
+                cmndlineup=None, cmndnodes=None, ancestor_list=None,
                 descendant_list=None):
         self.ID = ID  # an integer ascending from 0 to the number of the nodes minus 1)
         self.message = message  # some integer number representing an initial message
-        self.levin = levin  # an integer between 0 and the height of the hierarchy before an iteration
-        self.levcur = levcur  # as levin but for the update after the iteration
         self.parent = parent  # an integer if applicable (non applicable to the root node)
-        self.q = q  # an efficiency factor for maintaining a position in a superiour level coming from an inferior
-        self.highercmnd = highercmnd  # an integer ascending from 1 to the height minus 2 indicating up to which 
-        # level commanding nodes upstream can take over their subordinates' command
+        self.highercmnd = highercmnd  # an integer ascending from 1 to the height minus 1 indicating the value of knowing 
+        # what superiours know
         self.children_list = []
         self.cmndlineup = []  # initialization for the full line of command including the node in question
         self.cmndnodes = []
-        self.survprob = survprob  # the node's survival probability
         self.ancestor_list = []  # a list of the node's direct ancestors
         self.descendant_list = []  # a list of the node's direct descendants
         
@@ -50,10 +46,10 @@ class Node:
     
     def CommandLineUp(self, l):
         '''
-        This function gathers all the ancestors of the node in question in a list up to l (min(l)=1), including
-        the node in question. The list is returned.
+        This function gathers all the ancestors of the node in question in a list up to l (min(l)=1).
+        The list is returned.
         '''
-        temp = self
+        temp = self.parent
 
         for i in range(l):  # depth of message: for l=0 leaf sees only parent. For l=n-1 leaf sees all ancestors
             if temp is not None:

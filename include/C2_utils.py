@@ -4,7 +4,7 @@ import numpy as np
 import Node
 
 #### Function for generating a command binary tree with random walk messaging
-def CommandGeneration(It = 100, levs = 12, ell = 1):
+def CommandGeneration(It = 100, levs = 12, ell = 1, branchf = 2):
     '''
     Returns an ensemble of binary trees as a list of network X graph objects.
     
@@ -13,6 +13,8 @@ def CommandGeneration(It = 100, levs = 12, ell = 1):
     levs: Optional int>0. Default=12. Height of the trees counting from 0.
     
     ell: Optional int>0. Default=1. Predecessor-successor relation (1 is simple parent-child). Integer>=1.
+
+    branchf: Optional int >=1. Default=2. The branching factor of the (n-ary) tree.
          For ell-1>1 there are short-circuits between the roots, the leaves and all nodes in between. 
     '''
 
@@ -21,17 +23,12 @@ def CommandGeneration(It = 100, levs = 12, ell = 1):
     n=levs  # height of the tree (index starts at 0).
     movesp = [-1, 1]  # the basis for the message distortion (random walk)
 
-#    np.random.seed(3)
-
     for j in ran:
-    #     np.random.seed(j)
         G=nx.Graph()
-
         mes = 0  # the offset (original message). The ansatz is that it should be correlated with system parameters.
         node = Node.Node(0,mes)  # ID arbitrarily set to 0 for the root
         next_nodes = [node]  # initialize the descendant tree
         nb_nodes = 1  # increment for the node ID allocation
-        nchildren = 2  # number of descendants per parent node (for n-ary trees)
         G.add_node(node.ID, Pknow=1/2**mes, ID=node.ID)
         # all_nodes = [node]  # initializer for the tree structure
         movesp = [-1, 1]  # the basis for the message distortion (random walk)
@@ -40,16 +37,17 @@ def CommandGeneration(It = 100, levs = 12, ell = 1):
             previous_nodes0 = next_nodes.copy()  # nodes from previous level stored for the generation of their children
             next_nodes = []
             for previous_node in previous_nodes0:  # generation of descendants and connections up and downstream in level
-                for j in range(nchildren):
+                for j in range(branchf):
                     mes = previous_node.message+np.random.choice(movesp)  # the new message (rnd walk with memory)
                     child_node = Node.Node(nb_nodes, mes)  # generation of child node
                     child_node.parent = previous_node  # connection of generated to parent node
+                    child_node.highercmnd = ell  # assigning different spans of knowledge to different nodes
                     Node.Node.CommandLineUp(child_node, ell)  # node and predecessors up to ell
                     nb_nodes += 1  # next unique ID
                     next_nodes += [child_node]  # the children which are to become parents in the next round
-                    G.add_node(child_node.ID, Pknow=1/2**np.abs(mes), ID=child_node.ID)
+                    G.add_node(child_node.ID, Pknow=1/2**((child_node.highercmnd-1)*np.abs(mes)), ID=child_node.ID)
                     G.add_edge(previous_node.ID, child_node.ID)
-                    for j in previous_node.cmndlineup:  # adding the short-circuits
+                    for j in child_node.cmndlineup:  # adding the short-circuits
                         G.add_edge(j, child_node.ID)
 
         ensemble.append(G)    
