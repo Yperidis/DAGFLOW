@@ -58,6 +58,98 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, branchf = 2):
     
     return ensemble
 
+def PrunedEnsemble(hmin=3, hmax=7, hstep=3, ExtF =0.1, branchf=2, It=100):
+    '''
+    Returns an ensemble of pruned trees due to external (site percolation) and internal
+    (stochastic from a combination of connectivity and values of the trees) failures, for specified 
+    tree heights and as a list of network X graph objects. Each ensemble element's size within the 
+    ensemble is determined by the minimum and maximum height of the trees scanned. For each height, 
+    all its ell values are scanned. The size of the returned ensemble is hmin+(hmin+hstep)+(hmin+2hstep)+
+    ...+hmax.
+    
+    It: Optional. Reference CommandGeneration function
+    
+    branchf: Optional. Reference CommandGeneration function
+    
+    hmin: Optional, int>1. The minimal value of the heights of the trees
+    
+    hmax: Optional, int>hmin. The maximal value of the heights of the trees
+    '''
+    PrunedEnsembles = {}
+    for h in range(hmin,hmax,hstep):
+        for ell in range(1,h):
+            TreeEnsemble = CommandGeneration(levs=h, ell=ell, branchf=2, It=100)
+
+            FailEnsemb = []
+            NoExt = int(ExtF*TreeEnsemble[0].number_of_nodes())
+            AllNodes = list(TreeEnsemble[0].nodes())
+
+            # External failures
+            for specimen in TreeEnsemble:
+                Nfail = list(np.random.choice(AllNodes, size=NoExt, replace=False))
+                FailEnsemb += [Nfail]
+
+            # Internal failures
+            for specimen in enumerate(TreeEnsemble):
+                for i in specimen[1].nodes():
+                    if specimen[1].nodes[i]['Pknow'] < np.random.uniform() and specimen[1].nodes[i]['ID'] not in FailEnsemb[specimen[0]]:
+                        FailEnsemb[specimen[0]].append( specimen[1].nodes[i]['ID'] )
+
+            # Removal of failed nodes
+            for i in enumerate(TreeEnsemble):
+                for rmv in FailEnsemb[i[0]]:
+                    i[1].remove_node(rmv)
+            
+            kwd = 'h=' + str(h) + ', ell=' + str(ell)
+            PrunedEnsembles[kwd] = TreeEnsemble
+                    
+    return PrunedEnsembles
+
+def CCNosANDSizes(TreeEnsemble):
+    '''
+    Returns a dictionary of a list containing the median and average of the Nos of the CCs 
+    given an ensemble of graphs (TreeEnsemble), as well as a list of the CC sizes for a 
+    sample graph in the given ensemble closest to the aforementioned average.
+    '''
+    CCInfo = {}
+
+    for i in TreeEnsemble:
+        CCEnsemble, Temp = [], []
+        for j in TreeEnsemble[i]:
+            CCs = list( nx.connected_components(j) )  # CCs
+            CCEnsemble.append( CCs )  # gathering the CCs
+            Temp.append( len(CCs) )  # gathering the Nos of CCs                
+        MedNoCCs = np.median(Temp)  # Median of CCs' size (sorting implicit)
+        AvNoCCs = np.mean(Temp)  # Average of CCs' size
+        TempValue = find_nearest(Temp,AvNoCCs)  # ensure that the value closest to the one given is in Temp
+        AvCCsizesInd = Temp.index(TempValue)  # locating the required CCs' size from the graph ensemble
+
+        AvCCsizes = []
+        for k in enumerate(CCEnsemble[AvCCsizesInd]):
+            AvCCsizes.append( (k[0], len(k[1]) ) )  # gathering the CC sizes of the aforementioned quantity
+
+        CCInfo[i] = [MedNoCCs, AvNoCCs, AvCCsizes]  # gathering summaries of the aforementioned quantities
+        
+    return CCInfo
+
+# Finding the nearest value in a given array
+def find_nearest(array, value):
+    '''
+    Returns the nearest value to the one given from a given iterable of primitives
+    '''
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return array[idx]
+
+def Expansion(Iterable):
+    '''
+    Returns a list with all the elements of the given iterable.
+    '''
+    Exp = []
+    for i in Iterable:
+        for j in i:
+            Exp.append(j)
+    return Exp
 
 #### Function for checking the higher node take over and if this fails to remove the subtrees of the nodes in question. 
 #### Averaging is taken into account.
