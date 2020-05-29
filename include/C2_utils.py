@@ -64,8 +64,8 @@ def PrunedEnsemble(hmin=3, hmax=7, hstep=3, ExtF =0.1, branchf=2, It=100):
     (stochastic from a combination of connectivity and values of the trees) failures, for specified 
     tree heights and as a list of network X graph objects. Each ensemble element's size within the 
     ensemble is determined by the minimum and maximum height of the trees scanned. For each height, 
-    all its ell values are scanned. The size of the returned ensemble is hmin+(hmin+hstep)+(hmin+2hstep)+
-    ...+hmax.
+    all its available ell values are scanned. The size of the returned ensemble is hmin+(hmin+hstep)+
+    (hmin+2hstep)+...+hmax.
     
     It: Optional. Reference CommandGeneration function
     
@@ -109,26 +109,32 @@ def CCNosANDSizes(TreeEnsemble):
     '''
     Returns a dictionary of a list containing the median and average of the Nos of the CCs 
     given an ensemble of graphs (TreeEnsemble), as well as a list of the CC sizes for a 
-    sample graph in the given ensemble closest to the aforementioned average.
+    sample graph in the given ensemble closest to the aforementioned average. Lastly, the
+    average number of nodes surviving the pruning for the ensemble, as the sum of all the CCs' nodes.
+    Accepts as an argument a dictionary of ensembles, where each ensemble has been
+    generated with a height and ell specified in its key.
     '''
     CCInfo = {}
 
     for i in TreeEnsemble:
-        CCEnsemble, Temp = [], []
+        CCEnsemble, Temp, TotGraphNs = [], [], []
         for j in TreeEnsemble[i]:
             CCs = list( nx.connected_components(j) )  # CCs
             CCEnsemble.append( CCs )  # gathering the CCs
-            Temp.append( len(CCs) )  # gathering the Nos of CCs                
+            Temp.append( len(CCs) )  # gathering the Nos of CCs
+            TotGraphNs.append( len( Expansion(CCs) ) )  # gathering the total nodes of all the CCs for each graph
         MedNoCCs = np.median(Temp)  # Median of CCs' size (sorting implicit)
         AvNoCCs = np.mean(Temp)  # Average of CCs' size
         TempValue = find_nearest(Temp,AvNoCCs)  # ensure that the value closest to the one given is in Temp
-        AvCCsizesInd = Temp.index(TempValue)  # locating the required CCs' size from the graph ensemble
+        AvCCsizesInd = Temp.index(TempValue)  # locating the required CCs' size from the pool within the graph ensemble
+        AvTotGraphN = np.mean(TotGraphNs)  # Average of total nodes surviving
+        
 
         AvCCsizes = []
         for k in enumerate(CCEnsemble[AvCCsizesInd]):
             AvCCsizes.append( (k[0], len(k[1]) ) )  # gathering the CC sizes of the aforementioned quantity
 
-        CCInfo[i] = [MedNoCCs, AvNoCCs, AvCCsizes]  # gathering summaries of the aforementioned quantities
+        CCInfo[i] = [MedNoCCs, AvNoCCs, AvCCsizes, AvTotGraphN]  # gathering summaries of the aforementioned quantities
         
     return CCInfo
 
