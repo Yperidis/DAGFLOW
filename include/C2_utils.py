@@ -105,14 +105,16 @@ def PrunedEnsemble(hmin=3, hmax=7, hstep=3, ExtF =0.1, branchf=2, It=100):
                     
     return PrunedEnsembles
 
-def CCNosANDSizes(TreeEnsemble):
+def CCNosANDSizes(TreeEnsemble, MinCC=1):
     '''
     Returns a dictionary of a list containing the median and average of the Nos of the CCs 
     given an ensemble of graphs (TreeEnsemble), as well as a list of the CC sizes for a 
     sample graph in the given ensemble closest to the aforementioned average. Lastly, the
     average number of nodes surviving the pruning for the ensemble, as the sum of all the CCs' nodes.
     Accepts as an argument a dictionary of ensembles, where each ensemble has been
-    generated with a height and ell specified in its key.
+    generated with a height and ell specified in its key. 
+    
+    MinCC: Optional, int>=1. The minimal value of the CCs' size retained for the analysis.
     '''
     CCInfo = {}
 
@@ -120,6 +122,7 @@ def CCNosANDSizes(TreeEnsemble):
         CCEnsemble, Temp, TotGraphNs = [], [], []
         for j in TreeEnsemble[i]:
             CCs = list( nx.connected_components(j) )  # CCs
+            CCs = [x for x in CCs if len(x) >= MinCC]  # keep CCs above a certain size. Default: 1 node.
             CCEnsemble.append( CCs )  # gathering the CCs
             Temp.append( len(CCs) )  # gathering the Nos of CCs
             TotGraphNs.append( len( Expansion(CCs) ) )  # gathering the total nodes of all the CCs for each graph
