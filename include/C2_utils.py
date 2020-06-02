@@ -58,7 +58,7 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, branchf = 2):
     
     return ensemble
 
-def PrunedEnsemble(hmin=3, hmax=7, hstep=3, ExtF =0.1, branchf=2, It=100):
+def PrunedEnsemble(hmin=3, hmax=7, hstep=3, ExtF=0.1, ExtBias=False, branchf=2, It=100): 
     '''
     Returns an ensemble of pruned trees due to external (site percolation) and internal
     (stochastic from a combination of connectivity and values of the trees) failures, for specified 
@@ -74,6 +74,8 @@ def PrunedEnsemble(hmin=3, hmax=7, hstep=3, ExtF =0.1, branchf=2, It=100):
     hmin: Optional, int>1. The minimal value of the heights of the trees
     
     hmax: Optional, int>hmin. The maximal value of the heights of the trees
+    
+    ExtBias: Optional, boolean. Whether a uniform or an exponential distribution, dependent on node position, should be chosen for the site percolation selection.
     '''
     PrunedEnsembles = {}
     for h in range(hmin,hmax,hstep):
@@ -86,7 +88,14 @@ def PrunedEnsemble(hmin=3, hmax=7, hstep=3, ExtF =0.1, branchf=2, It=100):
 
             # External failures
             for specimen in TreeEnsemble:
-                Nfail = list(np.random.choice(AllNodes, size=NoExt, replace=False))
+                if ExtBias:  # bias for site percolation choice?
+                    ExtPPicks = []
+                    for i in Test[0].nodes():
+                        ExtPPicks.append( 1-2**(-Test[0].nodes[i]['lev']) )
+                    ExtPPicks = np.array(ExtPPicks)/np.sum(ExtPPicks)
+                    Nfail = list(np.random.choice(AllNodes, size=NoExt, replace=False, p=ExtPPicks))
+                else:
+                    Nfail = list(np.random.choice(AllNodes, size=NoExt, replace=False))
                 FailEnsemb += [Nfail]
 
             # Internal failures
