@@ -90,8 +90,8 @@ def PrunedEnsemble(hmin=3, hmax=7, hstep=3, ExtF=0.1, ExtBias=False, branchf=2, 
             for specimen in TreeEnsemble:
                 if ExtBias:  # bias for site percolation choice?
                     ExtPPicks = []
-                    for i in Test[0].nodes():
-                        ExtPPicks.append( 1-2**(-Test[0].nodes[i]['lev']) )
+                    for i in TreeEnsemble[0].nodes():
+                        ExtPPicks.append( 1-2**(-TreeEnsemble[0].nodes[i]['lev']) )
                     ExtPPicks = np.array(ExtPPicks)/np.sum(ExtPPicks)
                     Nfail = list(np.random.choice(AllNodes, size=NoExt, replace=False, p=ExtPPicks))
                 else:
@@ -136,17 +136,17 @@ def CCNosANDSizes(TreeEnsemble, MinCC=1):
             Temp.append( len(CCs) )  # gathering the Nos of CCs
             TotGraphNs.append( len( Expansion(CCs) ) )  # gathering the total nodes of all the CCs for each graph
         MedNoCCs = np.median(Temp)  # Median of CCs' size (sorting implicit)
-        AvNoCCs = np.mean(Temp)  # Average of CCs' size
+        AvNoCCs = np.round( np.mean(Temp) )  # Average of CCs' size rounded
         TempValue = find_nearest(Temp,AvNoCCs)  # ensure that the value closest to the one given is in Temp
         AvCCsizesInd = Temp.index(TempValue)  # locating the required CCs' size from the pool within the graph ensemble
-        AvTotGraphN = np.mean(TotGraphNs)  # Average of total nodes surviving
+        AvTotGraphN = np.round( np.mean(TotGraphNs) )  # Average of total nodes surviving rounded
         
 
         AvCCsizes = []
         for k in enumerate(CCEnsemble[AvCCsizesInd]):
             AvCCsizes.append( (k[0], len(k[1]) ) )  # gathering the CC sizes of the aforementioned quantity
 
-        CCInfo[i] = [MedNoCCs, AvNoCCs, AvCCsizes, AvTotGraphN]  # gathering summaries of the aforementioned quantities
+        CCInfo[i] = [MedNoCCs, int(AvNoCCs), AvCCsizes, int(AvTotGraphN)]  # gathering summaries of the aforementioned quantities
         
     return CCInfo
 
