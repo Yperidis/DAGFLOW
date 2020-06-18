@@ -60,9 +60,9 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, branchf = 2):
 
 def PrunedEnsemble(hmin=3, hmax=7, hstep=3, ExtF=0.1, ExtBias=False, branchf=2, It=100): 
     '''
-    Returns an ensemble of pruned trees due to external (site percolation) and internal
-    (stochastic from a combination of connectivity and values of the trees) failures, for specified 
-    tree heights and as a list of network X graph objects. Each ensemble element's size within the 
+    Returns a dictionary of ensembles of network X graph objects (pruned trees) due to external 
+    (site percolation) and internal (stochastic from a combination of connectivity and node values 
+    of the trees) failures, for specified tree heights and ell values. Each ensemble element's size within the 
     ensemble is determined by the minimum and maximum height of the trees scanned. For each height, 
     all its available ell values are scanned. The size of the returned ensemble is hmin+(hmin+hstep)+
     (hmin+2hstep)+...+hmax.
@@ -168,6 +168,21 @@ def Expansion(Iterable):
         for j in i:
             Exp.append(j)
     return Exp
+
+# Function for measuring the GCC sizes
+def GCCSize(TreeEnsemble):
+    '''
+    Returns a dictionary of the average GCC sizes for each height and ell, 
+    given an ensemble of graphs (networkX objects).
+    '''
+    GCCSizes = {}
+    for i in TreeEnsemble:
+        GCCs = []
+        for j in TreeEnsemble[i]:
+            temp = list( nx.connected_components(j) )
+            GCCs.append( len( max( temp ) ) )
+        GCCSizes[i] = int( np.mean(GCCs) )
+    return GCCSizes
 
 #### Function for checking the higher node take over and if this fails to remove the subtrees of the nodes in question. 
 #### Averaging is taken into account.
