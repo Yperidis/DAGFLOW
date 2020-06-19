@@ -48,8 +48,10 @@ def CommandGeneration(It = 100, levs = 12, ell = 1, branchf = 2):
                     Node.Node.CommandLineUp(child_node, ell)  # node and predecessors up to ell
                     nb_nodes += 1  # next unique ID
                     next_nodes += [child_node]  # the children which are to become parents in the next round
+#                     G.add_node(child_node.ID, Pknow=1/( 1 + np.exp( (child_node.highercmnd-1)*np.abs(mes) ) ), ID=child_node.ID,
+#                               lev=child_node.lev)  # logistic survival probability
                     G.add_node(child_node.ID, Pknow=1/2**((child_node.highercmnd-1)*np.abs(mes)), ID=child_node.ID,
-                              lev=child_node.lev)
+                              lev=child_node.lev)  # inverse exponential survival probability
                     G.add_edge(previous_node.ID, child_node.ID)
                     for j in child_node.cmndlineup:  # adding the short-circuits
                         G.add_edge(j, child_node.ID)
@@ -62,7 +64,8 @@ def PrunedEnsemble(hmin=3, hmax=7, hstep=3, ExtF=0.1, ExtBias=False, branchf=2, 
     '''
     Returns a dictionary of ensembles of network X graph objects (pruned trees) due to external 
     (site percolation) and internal (stochastic from a combination of connectivity and node values 
-    of the trees) failures, for specified tree heights and ell values. Each ensemble element's size within the 
+    of the trees) failures, as well as a dictionary for the average number of internal failures for each ensemble, 
+    for specified tree heights and ell values. Each ensemble element's size within the 
     ensemble is determined by the minimum and maximum height of the trees scanned. For each height, 
     all its available ell values are scanned. The size of the returned ensemble is hmin+(hmin+hstep)+
     (hmin+2hstep)+...+hmax.
@@ -77,42 +80,66 @@ def PrunedEnsemble(hmin=3, hmax=7, hstep=3, ExtF=0.1, ExtBias=False, branchf=2, 
     
     ExtBias: Optional, boolean. Whether a uniform or an exponential distribution, dependent on node position, should be chosen for the site percolation selection.
     '''
-    PrunedEnsembles = {}
+    PrunedEnsembles, IntFails = {}, {}
     for h in range(hmin,hmax,hstep):
+        temp = []
         for ell in range(1,h):
             TreeEnsemble = CommandGeneration(levs=h, ell=ell, branchf=2, It=100)
 
-            FailEnsemb = []
             NoExt = int(ExtF*TreeEnsemble[0].number_of_nodes())
             AllNodes = list(TreeEnsemble[0].nodes())
-
-            # External failures
-            for specimen in TreeEnsemble:
-                if ExtBias:  # bias for site percolation choice?
-                    ExtPPicks = []
-                    for i in TreeEnsemble[0].nodes():
-                        ExtPPicks.append( 1-2**(-TreeEnsemble[0].nodes[i]['lev']) )
-                    ExtPPicks = np.array(ExtPPicks)/np.sum(ExtPPicks)
-                    Nfail = list(np.random.choice(AllNodes, size=NoExt, replace=False, p=ExtPPicks))
-                else:
-                    Nfail = list(np.random.choice(AllNodes, size=NoExt, replace=False))
-                FailEnsemb += [Nfail]
-
-            # Internal failures
-            for specimen in enumerate(TreeEnsemble):
-                for i in specimen[1].nodes():
-                    if specimen[1].nodes[i]['Pknow'] < np.random.uniform() and specimen[1].nodes[i]['ID'] not in FailEnsemb[specimen[0]]:
-                        FailEnsemb[specimen[0]].append( specimen[1].nodes[i]['ID'] )
+            FailEnsemb = Failures(TreeEnsemble, NoExt, ExtBias, AllNodes)
 
             # Removal of failed nodes
             for i in enumerate(TreeEnsemble):
-                for rmv in FailEnsemb[i[0]]:
+                for rmv in FailEnsemb[0][i[0]]:
                     i[1].remove_node(rmv)
             
             kwd = 'h=' + str(h) + ', ell=' + str(ell)
             PrunedEnsembles[kwd] = TreeEnsemble
+            temp.append( FailEnsemb[1] )
+        IntFails[h] = temp  # keeping track of the internal failures per height
                     
-    return PrunedEnsembles
+    return PrunedEnsembles, IntFails
+
+# Function for calculating the total failures and especially the internal ones.
+def Failures(TreeEnsemble, NoExt, ExtBias, AllNodes):
+    '''
+    Returns a dictionary of the total failures for every of the ensemble network X graph objects given and 
+    the average number of the internal failures for the ensemble.
+    
+    TreeEnsemble: An ensemble of network X graph objects.
+    
+    NoExt: int>=0. The number of externally removed nodes (external failures).
+    
+    ExtBias: Boolean. Determines whether the externally removed nodes will be removed equiprobably (see PrunedEnsemble).
+    
+    AllNodes: List. A list of all the nodes of an arbitrary sample from the given graph ensemble, given that all
+    the graphs of the ensemble have the same number of nodes.
+    '''
+    FailEnsemb = []
+    IntFails = []
+    # External failures
+    for specimen in TreeEnsemble:
+        if ExtBias:  # bias for site percolation choice?
+            ExtPPicks = []
+            for i in TreeEnsemble[0].nodes():
+                ExtPPicks.append( 1-2**(-TreeEnsemble[0].nodes[i]['lev']) )
+            ExtPPicks = np.array(ExtPPicks)/np.sum(ExtPPicks)
+            Nfail = list(np.random.choice(AllNodes, size=NoExt, replace=False, p=ExtPPicks))
+        else:
+            Nfail = list(np.random.choice(AllNodes, size=NoExt, replace=False))
+        FailEnsemb += [Nfail]
+
+    # Internal failures
+    for specimen in enumerate(TreeEnsemble):
+        temp = []
+        for i in specimen[1].nodes():
+            if specimen[1].nodes[i]['Pknow'] < np.random.uniform() and specimen[1].nodes[i]['ID'] not in FailEnsemb[specimen[0]]:
+                FailEnsemb[specimen[0]].append( specimen[1].nodes[i]['ID'] )
+                temp.append( specimen[1].nodes[i]['ID'] )  # keep track of the internal failures
+        IntFails.append( len(temp) )
+    return FailEnsemb, int( np.mean(IntFails) )
 
 def CCNosANDSizes(TreeEnsemble, MinCC=1):
     '''
@@ -228,13 +255,14 @@ def IncreaseSubTreeConnectivity(struct, ell=2):
             j += 1
             temp = buf  # prepare the children of the next level for iteration
 
+# A function for determining the value that is mapped to a node (its perception) as a function of its predecessor values
 def NodesOutF(NodeSet):
     '''
     Assuming a tree structure, returns a dictionary where every node of the tree is a key to a value corresponding to a
     function of the node's predecessors' messages.
     '''
 
-    outf = {NodeSet[0] : 0}  # Initialize the root with a null std
+    outf = {NodeSet[0] : 0}  # Initialize the root with a null value
     k = 0
 
     for i in NodeSet[1:]:
